@@ -1,1 +1,0 @@
-# Ames-Price-Regression
