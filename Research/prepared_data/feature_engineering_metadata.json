@@ -1,0 +1,31 @@
+{
+    "train_path": "..\\Data\\train.csv",
+    "test_path": "..\\Data\\test.csv",
+    "original_train_shape": [
+        1460,
+        81
+    ],
+    "original_test_shape": [
+        1459,
+        80
+    ],
+    "clean_train_rows_after_outlier_removal": 1458,
+    "test_rows": 1459,
+    "feature_count": 199,
+    "target_raw": "SalePrice",
+    "target_log": "SalePrice_log1p",
+    "removed_outlier_ids": [
+        524,
+        1299
+    ],
+    "removed_outlier_indices": [
+        523,
+        1298
+    ],
+    "same_columns": true,
+    "train_missing_values": 0,
+    "test_missing_values": 0,
+    "train_infinite_values": 0,
+    "test_infinite_values": 0,
+    "note": "Prepared feature-engineered data only. No model training is included in this notebook."
+}
