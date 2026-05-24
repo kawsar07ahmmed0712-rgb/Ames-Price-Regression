@@ -1,37 +1,31 @@
-# House Price Prediction Regression
+# Ames House Price Regression
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Regression-green)
+![Dataset](https://img.shields.io/badge/Dataset-Ames%20Housing-orange)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ## Project Overview
 
-This project is an end-to-end machine learning regression project focused on predicting house sale prices using structured housing data.
+This project is an end-to-end machine learning regression project for predicting house sale prices using the Ames Housing dataset.
 
-The main goal of this project is to build a reliable regression model that can learn from property-related features such as location, area, quality, condition, basement information, garage information, year-built details, and other housing attributes to estimate the final sale price.
+The goal of this project is to build a reliable regression model that can estimate house prices from property-related features such as overall quality, living area, neighborhood, garage information, basement features, year built, remodeling year, and other housing attributes.
 
-This project includes:
+The project includes exploratory data analysis, feature engineering, model training, validation, and final prediction generation.
 
-- Exploratory Data Analysis
-- Data cleaning
-- Missing value handling
-- Feature engineering
-- Outlier analysis
-- Model training
-- Cross-validation
-- Model comparison
-- Weighted blending
-- Stacking / meta-modeling
-- Final prediction generation
+---
+
+## Project Preview
+
+![Project Preview](output.png)
 
 ---
 
 ## Problem Statement
 
-House prices are affected by many factors, including property size, neighborhood, building quality, age, garage capacity, basement condition, and overall living area.
+House prices depend on many factors such as size, location, construction quality, age, condition, basement area, garage capacity, and neighborhood characteristics.
 
-The objective of this project is to predict the `SalePrice` of houses using the available numerical and categorical features.
+The objective of this project is to predict the final house sale price using the available numerical and categorical features.
 
 This is a supervised machine learning regression problem.
 
@@ -39,9 +33,9 @@ This is a supervised machine learning regression problem.
 
 ## Dataset
 
-The dataset contains house-level information with multiple numerical and categorical features.
+The project uses the Ames Housing dataset.
 
-Main files used in this project:
+Main files:
 
 ```text
 Data/
@@ -51,7 +45,7 @@ Data/
 └── data_description.txt
 ```
 
-The target variable is:
+Target variable:
 
 ```text
 SalePrice
@@ -68,11 +62,11 @@ Exploratory Data Analysis
    ↓
 Missing Value Analysis
    ↓
-Outlier Detection
+Outlier Handling
    ↓
 Feature Engineering
    ↓
-Feature Transformation
+Feature Encoding
    ↓
 Model Training
    ↓
@@ -80,33 +74,35 @@ Cross Validation
    ↓
 Model Comparison
    ↓
-Weighted Blending / Stacking
-   ↓
 Final Prediction
+   ↓
+Submission File
 ```
 
 ---
 
 ## Exploratory Data Analysis
 
-The EDA stage was used to understand the structure of the dataset and identify important patterns before modeling.
+The EDA notebook was used to understand the dataset and identify important patterns before modeling.
 
 Main EDA tasks:
 
 - Checked dataset shape and feature types
-- Analyzed numerical and categorical variables
-- Studied target variable distribution
-- Checked missing values
-- Analyzed relationships between features and `SalePrice`
+- Analyzed missing values
+- Studied numerical and categorical features
+- Analyzed the target variable distribution
+- Checked skewness in `SalePrice`
+- Explored relationships between important features and house prices
 - Reviewed outliers
-- Investigated important property-related features
+- Identified strong price-related features
 
 Important observations:
 
-- `SalePrice` is right-skewed, so log transformation is useful.
-- Overall quality, living area, garage capacity, basement size, and neighborhood-related features have strong relationships with house price.
-- Some missing values represent the absence of a feature, such as no basement, no garage, no pool, or no alley access.
-- Outliers need careful handling because some extreme values can strongly affect regression models.
+- `SalePrice` is right-skewed, so log transformation is useful for stable regression modeling.
+- Overall quality has a strong relationship with house price.
+- Living area, garage capacity, basement area, and neighborhood are important price-related factors.
+- Some missing values represent absence of a feature, such as no garage, no basement, no pool, or no alley access.
+- Outliers need careful handling because extreme values can strongly affect regression models.
 
 ---
 
@@ -117,16 +113,17 @@ Feature engineering was one of the most important parts of this project.
 Main feature engineering steps:
 
 - Handled missing values based on feature meaning
-- Converted some missing categorical values into `"None"`
-- Applied target transformation using `log1p(SalePrice)`
-- Created meaningful property-level features
-- Created total area and quality-related features
-- Created age-related features
+- Converted meaningful missing categorical values into `"None"`
+- Applied log transformation to the target variable
+- Created total area-based features
+- Created bathroom-related features
+- Created age and remodeling-related features
 - Created binary indicator features
-- Handled skewed numerical features
-- Prepared train and test data with matching feature structure
+- Handled skewed numerical variables
+- Encoded categorical variables
+- Prepared train and test data for modeling
 
-Examples of engineered feature ideas:
+Example engineered features:
 
 ```text
 TotalSF
@@ -139,92 +136,56 @@ HasGarage
 HasBasement
 HasPool
 HasFireplace
-OverallQualityScore
 ```
 
 ---
 
 ## Models Used
 
-Multiple regression models were trained and compared.
+Several regression models were trained and compared.
 
-Models include:
+Models used in this project include:
 
 - Ridge Regression
 - ElasticNet
 - Bayesian Ridge
 - Support Vector Regression
 - CatBoost Regressor
-- Weighted Blending
-- Stacking / Meta Model
+- Ensemble / Stacking Model
 
 ---
 
 ## Model Evaluation
 
-The main evaluation metric used in this project is:
+The main evaluation metric used in this project is RMSE on the log-transformed target.
 
 ```text
-OOF Log RMSE
+Metric: RMSE / Log RMSE
 ```
 
-OOF means out-of-fold validation. It gives a more reliable estimate of model performance compared to a single train-test split.
+The model performance was evaluated using cross-validation to make the result more reliable and reduce the risk of depending on a single train-validation split.
 
 ---
 
-## Model Comparison
+## Key Results
 
-| Model | Type | OOF Log RMSE |
-|---|---:|---:|
-| Master Weighted Blend | Weighted Blend | 0.10716 |
-| ElasticNet Robust Tuned | Single Model | 0.10992 |
-| ElasticNet RobustScaler Baseline | Single Model | 0.11104 |
-| SVR RBF RobustScaler Master | Single Model | 0.11109 |
-| Ridge RobustScaler Alpha10 | Single Model | 0.11214 |
-| Bayesian Ridge RobustScaler | Single Model | 0.11217 |
-| Ridge RobustScaler Baseline | Single Model | 0.11232 |
-| Ridge RobustScaler Alpha30 | Single Model | 0.11270 |
-| CatBoost Master V2 | Single Model | 0.11386 |
+The project achieved strong regression performance using feature engineering and ensemble modeling.
 
-Best weighted blend result:
+Summary:
 
-```text
-OOF Log RMSE: 0.10716
-```
-
-Best meta model result:
-
-```text
-OOF Log RMSE: 0.10637
-```
-
----
-
-## Final Ensemble
-
-The final ensemble used a weighted blend of selected models.
-
-Selected models:
-
-```text
-Ridge_RobustScaler_baseline
-ElasticNet_robust_tuned
-ElasticNet_RobustScaler_baseline
-SVR_RBF_RobustScaler_master
-Ridge_RobustScaler_alpha10_master
-BayesianRidge_RobustScaler_master
-Ridge_RobustScaler_alpha30_master
-CatBoost_master_v2
-```
-
-The ensemble improved performance compared to individual models by combining the strengths of different regression algorithms.
+- Built a complete regression workflow
+- Improved the dataset through advanced feature engineering
+- Compared multiple machine learning models
+- Used cross-validation for reliable model evaluation
+- Generated final prediction files for submission
+- Organized the final project into a clean GitHub portfolio structure
 
 ---
 
 ## Repository Structure
 
 ```text
-House-Price-Prediction-Regression/
+Ames-Price-Regression/
 │
 ├── Data/
 │   ├── train.csv
@@ -232,45 +193,26 @@ House-Price-Prediction-Regression/
 │   ├── sample_submission.csv
 │   └── data_description.txt
 │
-├── Research/
-│   ├── EDA_House_Price_clean_structured.ipynb
-│   ├── Feature_Engeneering.ipynb
-│   ├── Model_Training.ipynb
-│   ├── bivariate/
-│   ├── multivariate/
-│   ├── univariate/
-│   └── report/
+├── Notebook/
+│   ├── Exploratory_Data_Analysis.ipynb
+│   ├── Feature_Engineering.ipynb
+│   ├── Model_training.ipynb
+│   └── feature_groups.py
 │
-├── fe_report/
-├── fe_report_v2/
-├── fe_result/
-├── fe_result_v2/
-├── model_report/
-├── model_result/
+├── report/
+│   ├── ames_house_price_dataset_guide.md
+│   ├── ames_ml_review.md
+│   ├── corrected_fe_plan_no_code.md
+│   ├── feature_engineering_plan_report.md
+│   ├── feature_engineering_problems.md
+│   ├── improved_all_eda_reports_combined.md
+│   ├── planing.excalidraw
+│   └── reformed_feature_engineering_plan.md
 │
-├── Exploratory_data_analysis.md
-├── Feature_Engeneering.md
-├── FE_v2_problem_solution_feature_map.md
-├── advanced_feature_engineering_route_house_price (1).md
-├── metadata.yaml
-├── LICENSE
+├── output.png
+├── .gitignore
 └── README.md
 ```
-
----
-
-## Key Results
-
-This project achieved strong regression performance through advanced feature engineering and ensemble modeling.
-
-Main results:
-
-- Best single model: ElasticNet Robust Tuned
-- Best single model OOF Log RMSE: `0.10992`
-- Best weighted blend OOF Log RMSE: `0.10716`
-- Best meta model OOF Log RMSE: `0.10637`
-
-The weighted blend and meta-modeling approach improved performance over individual models.
 
 ---
 
@@ -279,8 +221,8 @@ The weighted blend and meta-modeling approach improved performance over individu
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/kawsar07ahmmed0712-rgb/House-Price-Prediction-Regression.git
-cd House-Price-Prediction-Regression
+git clone https://github.com/kawsar07ahmmed0712-rgb/Ames-Price-Regression.git
+cd Ames-Price-Regression
 ```
 
 ### 2. Create a virtual environment
@@ -305,16 +247,8 @@ source venv/bin/activate
 
 ### 3. Install required libraries
 
-If a `requirements.txt` file is available:
-
 ```bash
-pip install -r requirements.txt
-```
-
-If not, install the main libraries manually:
-
-```bash
-pip install numpy pandas matplotlib seaborn scikit-learn catboost scipy jupyter
+pip install numpy pandas matplotlib seaborn scikit-learn scipy catboost jupyter
 ```
 
 ### 4. Open Jupyter Notebook
@@ -323,12 +257,12 @@ pip install numpy pandas matplotlib seaborn scikit-learn catboost scipy jupyter
 jupyter notebook
 ```
 
-Then run the notebooks from the `Research/` folder in this order:
+Run the notebooks in this order:
 
 ```text
-1. EDA_House_Price_clean_structured.ipynb
-2. Feature_Engeneering.ipynb
-3. Model_Training.ipynb
+1. Notebook/Exploratory_Data_Analysis.ipynb
+2. Notebook/Feature_Engineering.ipynb
+3. Notebook/Model_training.ipynb
 ```
 
 ---
@@ -341,6 +275,7 @@ Then run the notebooks from the `Research/` folder in this order:
 - Matplotlib
 - Seaborn
 - Scikit-learn
+- SciPy
 - CatBoost
 - Jupyter Notebook
 
@@ -348,86 +283,58 @@ Then run the notebooks from the `Research/` folder in this order:
 
 ## Skills Demonstrated
 
-This project demonstrates the following machine learning skills:
+This project demonstrates the following machine learning and data science skills:
 
-- Regression modeling
+- Data cleaning
 - Exploratory data analysis
-- Missing value treatment
+- Missing value handling
+- Outlier analysis
 - Feature engineering
-- Outlier handling
-- Categorical encoding
-- Numerical transformation
+- Feature encoding
+- Regression modeling
 - Cross-validation
 - Model comparison
 - Ensemble learning
-- Weighted blending
-- Stacking / meta-modeling
-- Kaggle-style submission generation
+- Submission file generation
+- GitHub project organization
+
+---
+
+## Important Files
+
+| File | Description |
+|---|---|
+| `Notebook/Exploratory_Data_Analysis.ipynb` | Exploratory data analysis and initial dataset understanding |
+| `Notebook/Feature_Engineering.ipynb` | Missing value handling, feature creation, transformation, and encoding |
+| `Notebook/Model_training.ipynb` | Model training, validation, comparison, and final prediction |
+| `Notebook/feature_groups.py` | Feature grouping helper file |
+| `Data/train.csv` | Training dataset |
+| `Data/test.csv` | Test dataset |
+| `Data/data_description.txt` | Dataset feature description |
+| `report/` | Supporting project reports and planning files |
 
 ---
 
 ## Future Improvements
 
-Possible improvements for this project:
+Possible future improvements:
 
-- Add a clean `requirements.txt` file
+- Add a `requirements.txt` file
 - Convert notebook code into reusable Python scripts
-- Add a `src/` folder for modular pipeline code
-- Add model saving using `joblib` or `pickle`
-- Build a simple Streamlit web app for house price prediction
+- Add a clean `src/` pipeline
+- Save the best trained model using `joblib`
+- Build a Streamlit web application
 - Add SHAP-based model explainability
 - Add automated training and prediction scripts
-- Clean old notebooks and keep only final versions
-- Add final visual summary images to the README
-
----
-
-## Suggested Clean Project Structure
-
-For a more production-ready version, this project can be reorganized as:
-
-```text
-House-Price-Prediction-Regression/
-│
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── LICENSE
-│
-├── data/
-│   ├── train.csv
-│   ├── test.csv
-│   └── data_description.txt
-│
-├── notebooks/
-│   ├── 01_eda.ipynb
-│   ├── 02_feature_engineering.ipynb
-│   └── 03_model_training.ipynb
-│
-├── src/
-│   ├── preprocessing.py
-│   ├── features.py
-│   ├── train.py
-│   └── predict.py
-│
-├── reports/
-│   ├── figures/
-│   └── model_results.csv
-│
-├── models/
-│   └── final_model.pkl
-│
-└── outputs/
-    └── final_submission.csv
-```
+- Add final model performance charts to the README
 
 ---
 
 ## Conclusion
 
-This project shows a complete machine learning workflow for house price prediction. Starting from raw housing data, the project performs EDA, feature engineering, model training, cross-validation, and ensemble modeling.
+This project presents a complete machine learning workflow for house price prediction using the Ames Housing dataset.
 
-The best performance was achieved using ensemble methods, especially weighted blending and meta-modeling. The results show that combining multiple models can improve prediction accuracy compared to relying on a single model.
+The project covers data analysis, feature engineering, model training, validation, and prediction generation. Through proper preprocessing, strong feature engineering, and model comparison, the project builds a solid regression pipeline for predicting house sale prices.
 
 ---
 
@@ -441,4 +348,4 @@ GitHub: [kawsar07ahmmed0712-rgb](https://github.com/kawsar07ahmmed0712-rgb)
 
 ## License
 
-This project is licensed under the MIT License.
+This project is open-source and available under the MIT License.
