@@ -1,0 +1,113 @@
+# =========================
+# Python cache files
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Type checking / tool cache
+# =========================
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.cache/
+
+# =========================
+# Jupyter notebook checkpoints
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Virtual environments
+# =========================
+venv/
+env/
+.venv/
+ENV/
+
+# =========================
+# IDE / editor files
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Environment / secret files
+# =========================
+.env
+.env.*
+*.env
+
+# =========================
+# CatBoost generated files
+# =========================
+catboost_info/
+Notebook/catboost_info/
+
+# =========================
+# Prepared / intermediate data
+# These are generated from notebooks
+# =========================
+Notebook/prepared_data/
+Notebook/prepared_data_public_safe_v2/
+
+# =========================
+# Submission outputs
+# Keep only final selected submission if needed
+# =========================
+Notebook/submission/*
+!Notebook/submission/final_stacked_submission.csv
+
+# =========================
+# Saved model / artifact files
+# =========================
+*.pkl
+*.pickle
+*.joblib
+*.sav
+*.cbm
+*.model
+
+# =========================
+# Logs
+# =========================
+*.log
+*.tsv
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
+*.tmp
+*.bak
+
+# =========================
+# Large generated CSV files
+# Do not ignore original raw Data folder
+# =========================
+*_prepared.csv
+*_prepared_with_target.csv
+full_engineered_combined*.csv
+full_data_linear.csv
+full_data_tree.csv
+X_train_*.csv
+X_test_*.csv
+y_train*.csv
+test_ids.csv
+
+# =========================
+# Keep raw dataset files
+# =========================
+!Data/train.csv
+!Data/test.csv
+!Data/sample_submission.csv
+!Data/data_description.txt
