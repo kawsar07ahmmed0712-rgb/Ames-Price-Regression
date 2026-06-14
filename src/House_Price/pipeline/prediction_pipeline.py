@@ -196,3 +196,105 @@ class BatchPredictionPipeline:
         except Exception as e:
             logger.error("Batch prediction failed.")
             raise CustomException(e, sys)
+        
+class SinglePredictionPipeline:
+    """
+    Single raw-input prediction pipeline.
+
+    Responsibility:
+    - Load saved preprocessor.pkl
+    - Load saved final_model.pkl
+    - Convert raw Ames row into 199 engineered features
+    - Predict SalePrice
+    """
+
+    def __init__(self, config: PredictionConfig):
+        self.config = config
+
+    def _check_file_exists(self, file_path: str, file_label: str) -> None:
+        path = Path(file_path)
+
+        if not path.exists():
+            raise FileNotFoundError(f"{file_label} file not found: {path}")
+
+        if not path.is_file():
+            raise ValueError(f"{file_label} path exists but is not a file: {path}")
+
+    def predict_from_dataframe(
+        self,
+        raw_df: pd.DataFrame,
+        strict_unknown_categories: bool = True,
+        save_latest: bool = True,
+    ) -> Dict[str, Any]:
+        try:
+            logger.info("Single prediction from dataframe started.")
+
+            self._check_file_exists(self.config.preprocessor_path, "Preprocessor")
+            self._check_file_exists(self.config.final_model_path, "Final model")
+
+            preprocessor = load_object(self.config.preprocessor_path)
+            model = load_object(self.config.final_model_path)
+
+            X = preprocessor.transform(
+                raw_df,
+                strict_unknown_categories=strict_unknown_categories,
+            )
+
+            predictions = model.predict_price(
+                X=X,
+                apply_tail_lift=True,
+                apply_clipping=True,
+            )
+
+            predictions = np.asarray(predictions, dtype=float)
+
+            id_column = self.config.schema["columns"]["id_column"]
+
+            if id_column in raw_df.columns:
+                ids = raw_df[id_column].tolist()
+            else:
+                ids = list(range(1, len(raw_df) + 1))
+
+            prediction_records = []
+
+            for row_id, price in zip(ids, predictions):
+                prediction_records.append({
+                    id_column: int(row_id),
+                    "PredictedSalePrice": float(price),
+                })
+
+            result = {
+                "single_prediction_completed": True,
+                "rows_predicted": int(len(predictions)),
+                "feature_count": int(X.shape[1]),
+                "predictions": prediction_records,
+                "prediction_min": float(np.min(predictions)),
+                "prediction_mean": float(np.mean(predictions)),
+                "prediction_max": float(np.max(predictions)),
+            }
+
+            if save_latest:
+                save_json(
+                    file_path=self.config.prediction_output_path,
+                    data=result,
+                )
+
+            logger.info("Single prediction from dataframe completed successfully.")
+            return result
+
+        except Exception as e:
+            logger.error("Single prediction from dataframe failed.")
+            raise CustomException(e, sys)
+
+    def predict_single_dict(
+        self,
+        raw_input: Dict[str, Any],
+        strict_unknown_categories: bool = True,
+    ) -> Dict[str, Any]:
+        raw_df = pd.DataFrame([raw_input])
+
+        return self.predict_from_dataframe(
+            raw_df=raw_df,
+            strict_unknown_categories=strict_unknown_categories,
+            save_latest=True,
+        )

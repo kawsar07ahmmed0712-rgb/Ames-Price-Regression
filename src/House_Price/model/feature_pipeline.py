@@ -43,8 +43,12 @@ class AmesFeaturePipeline:
         self.high_skew_columns_: List[str] = []
         self.constant_columns_: List[str] = []
         self.dead_dummy_columns_: List[str] = []
+        self.categorical_levels_: Dict[str, List[Any]] = {}
+        self.median_bath_per_bedroom_: float | None = None
+        self.median_room_per_bedroom_: float | None = None
 
         self.metadata_: Dict[str, Any] = {}
+
 
     def fit_transform(
         self,
@@ -514,6 +518,8 @@ class AmesFeaturePipeline:
         median_room_per_bed = (
             train_with_beds["TotRmsAbvGrd"] / train_with_beds["BedroomAbvGr"]
         ).median()
+        self.median_bath_per_bedroom_ = float(median_bath_per_bed)
+        self.median_room_per_bedroom_ = float(median_room_per_bed)
 
         total_bath_series = (
             df["FullBath"]
@@ -675,6 +681,13 @@ class AmesFeaturePipeline:
 
         categorical_cols = df.select_dtypes(include="object").columns.tolist()
 
+        self.categorical_levels_ = {}
+
+        for col in categorical_cols:
+            categories = sorted(df[col].dropna().astype(str).unique().tolist())
+            self.categorical_levels_[col] = categories
+            df[col] = pd.Categorical(df[col].astype(str), categories=categories)
+
         if categorical_cols:
             df = pd.get_dummies(
                 df,
@@ -831,3 +844,421 @@ class AmesFeaturePipeline:
         }
 
         return metadata
+    
+    def transform(
+        self,
+        raw_df: pd.DataFrame,
+        strict_unknown_categories: bool = True,
+    ) -> pd.DataFrame:
+        """
+        Transform new raw Ames rows using already-fitted preprocessing state.
+
+        This method is used for frontend/API prediction.
+        It must not learn new medians, modes, rare categories, dummy columns,
+        skew columns, or variance filtering rules.
+        """
+        try:
+            logger.info("Ames feature pipeline transform started.")
+
+            if not self.feature_names_:
+                raise ValueError(
+                    "Feature pipeline is not fitted. feature_names_ is empty."
+                )
+
+            df = raw_df.copy().reset_index(drop=True)
+
+            if self.target_column in df.columns:
+                df = df.drop(columns=[self.target_column])
+
+            df = self._fix_known_data_errors(df)
+            df = self._handle_meaningful_missing_values(df)
+            df = self._handle_transform_missing_values(df)
+            df = self._transform_lot_frontage(df)
+            df = self._transform_masonry_veneer(df)
+
+            df = df.drop(columns=["Utilities", self.id_column], errors="ignore")
+
+            df = self._type_conversions(df)
+            df = self._apply_ordinal_encoding_transform(
+                df,
+                strict_unknown_categories=strict_unknown_categories,
+            )
+            df = self._apply_binary_encoding_and_basic_flags_transform(
+                df,
+                strict_unknown_categories=strict_unknown_categories,
+            )
+
+            df = self._create_core_area_features(df)
+            df = self._create_bathroom_features_transform(df)
+            df = self._create_presence_flags(df)
+            df = self._create_temporal_features(df)
+            df = self._create_quality_score_features(df)
+            df = self._create_interaction_features(df)
+            df = self._create_ratio_features(df)
+
+            df = self._group_rare_categories_transform(df)
+            df = self._one_hot_encode_transform(
+                df,
+                strict_unknown_categories=strict_unknown_categories,
+            )
+            df = self._apply_skew_transform_to_new_data(df)
+            df = self._drop_saved_redundant_features(df)
+            df = self._align_to_feature_names(df)
+
+            logger.info("Ames feature pipeline transform completed successfully.")
+            return df
+
+        except Exception as e:
+            logger.error("Ames feature pipeline transform failed.")
+            raise CustomException(e, sys)
+
+    def _handle_transform_missing_values(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        bsmt_num_cols = [
+            "BsmtFullBath",
+            "BsmtHalfBath",
+            "BsmtFinSF1",
+            "BsmtFinSF2",
+            "BsmtUnfSF",
+            "TotalBsmtSF",
+        ]
+
+        garage_num_cols = ["GarageCars", "GarageArea"]
+
+        for col in bsmt_num_cols + garage_num_cols:
+            if col in df.columns:
+                df[col] = df[col].fillna(0)
+
+        for col, mode_value in self.mode_values_.items():
+            if col in df.columns:
+                df[col] = df[col].fillna(mode_value)
+
+        for col, val in self.fixed_default_values_.items():
+            if col in df.columns:
+                df[col] = df[col].fillna(val)
+
+        return df
+
+    def _transform_lot_frontage(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        if "LotFrontage" not in df.columns:
+            raise ValueError("LotFrontage column is missing from raw input.")
+
+        if "Neighborhood" not in df.columns:
+            raise ValueError("Neighborhood column is missing from raw input.")
+
+        if self.lot_global_median_ is None:
+            raise ValueError("LotFrontage global median was not fitted.")
+
+        def fill_lot_frontage(row: pd.Series) -> float:
+            if pd.isnull(row["LotFrontage"]):
+                return self.lot_median_by_neigh_.get(
+                    row["Neighborhood"],
+                    self.lot_global_median_,
+                )
+            return row["LotFrontage"]
+
+        df["LotFrontage"] = df.apply(fill_lot_frontage, axis=1)
+        df["LotFrontage"] = df["LotFrontage"].fillna(self.lot_global_median_)
+
+        return df
+
+    def _transform_masonry_veneer(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        mask_a = df["MasVnrType"].isna() & (df["MasVnrArea"].fillna(0) == 0)
+        df.loc[mask_a, "MasVnrType"] = "None"
+        df.loc[mask_a, "MasVnrArea"] = 0
+
+        mask_b = df["MasVnrType"].isna() & (df["MasVnrArea"] > 0)
+        df.loc[mask_b, "MasVnrType"] = self.mode_veneer_
+
+        df["MasVnrType"] = df["MasVnrType"].fillna("None")
+        df["MasVnrArea"] = df["MasVnrArea"].fillna(0)
+
+        return df
+
+    def _apply_ordinal_encoding_transform(
+        self,
+        full_data: pd.DataFrame,
+        strict_unknown_categories: bool = True,
+    ) -> pd.DataFrame:
+        df = full_data.copy()
+
+        quality_map = {
+            "NoPool": 0,
+            "NoGarage": 0,
+            "NoBasement": 0,
+            "NoFireplace": 0,
+            "Po": 1,
+            "Fa": 2,
+            "TA": 3,
+            "Gd": 4,
+            "Ex": 5,
+        }
+
+        quality_cols = [
+            "ExterQual",
+            "ExterCond",
+            "BsmtQual",
+            "BsmtCond",
+            "HeatingQC",
+            "KitchenQual",
+            "FireplaceQu",
+            "GarageQual",
+            "GarageCond",
+            "PoolQC",
+        ]
+
+        for col in quality_cols:
+            if col not in df.columns:
+                continue
+
+            original_values = df[col].dropna().astype(str)
+            unknown_values = sorted(set(original_values) - set(quality_map.keys()))
+
+            if unknown_values and strict_unknown_categories:
+                raise ValueError(f"Unknown category in {col}: {unknown_values}")
+
+            df[col] = df[col].map(quality_map)
+
+        absent_ok_cols = [
+            "BsmtQual",
+            "BsmtCond",
+            "FireplaceQu",
+            "GarageQual",
+            "GarageCond",
+            "PoolQC",
+        ]
+
+        for col in absent_ok_cols:
+            if col in df.columns:
+                df[col] = df[col].fillna(0)
+
+        bsmt_exposure_map = {
+            "NoBasement": 0,
+            "No": 1,
+            "Mn": 2,
+            "Av": 3,
+            "Gd": 4,
+        }
+
+        bsmt_fin_map = {
+            "NoBasement": 0,
+            "Unf": 1,
+            "LwQ": 2,
+            "Rec": 3,
+            "BLQ": 4,
+            "ALQ": 5,
+            "GLQ": 6,
+        }
+
+        garage_finish_map = {
+            "NoGarage": 0,
+            "Unf": 1,
+            "RFn": 2,
+            "Fin": 3,
+        }
+
+        other_maps = {
+            "BsmtExposure": bsmt_exposure_map,
+            "BsmtFinType1": bsmt_fin_map,
+            "BsmtFinType2": bsmt_fin_map,
+            "GarageFinish": garage_finish_map,
+            "PavedDrive": {"N": 0, "P": 1, "Y": 2},
+            "LandSlope": {"Sev": 0, "Mod": 1, "Gtl": 2},
+            "Functional": {
+                "Sal": 0,
+                "Sev": 1,
+                "Maj2": 2,
+                "Maj1": 3,
+                "Mod": 4,
+                "Min2": 5,
+                "Min1": 6,
+                "Typ": 7,
+            },
+        }
+
+        for col, mapping in other_maps.items():
+            if col not in df.columns:
+                continue
+
+            original_values = df[col].dropna().astype(str)
+            unknown_values = sorted(set(original_values) - set(mapping.keys()))
+
+            if unknown_values and strict_unknown_categories:
+                raise ValueError(f"Unknown category in {col}: {unknown_values}")
+
+            df[col] = df[col].map(mapping)
+
+        for col in ["BsmtExposure", "BsmtFinType1", "BsmtFinType2", "GarageFinish"]:
+            if col in df.columns:
+                df[col] = df[col].fillna(0)
+
+        return df
+
+    def _apply_binary_encoding_and_basic_flags_transform(
+        self,
+        full_data: pd.DataFrame,
+        strict_unknown_categories: bool = True,
+    ) -> pd.DataFrame:
+        df = full_data.copy()
+
+        binary_maps = {
+            "CentralAir": {"Y": 1, "N": 0},
+            "Street": {"Pave": 1, "Grvl": 0},
+        }
+
+        for col, mapping in binary_maps.items():
+            if col not in df.columns:
+                continue
+
+            df[col] = df[col].astype(str).str.strip()
+
+            unknown_values = sorted(set(df[col].dropna()) - set(mapping.keys()))
+
+            if unknown_values and strict_unknown_categories:
+                raise ValueError(f"Unknown category in {col}: {unknown_values}")
+
+            df[col] = df[col].map(mapping)
+
+        df["HasGarage"] = (df["GarageType"] != "NoGarage").astype(int)
+        df["HasBasement"] = (df["BsmtQual"] != "NoBasement").astype(int)
+        df["HasPool"] = (df["PoolQC"] != "NoPool").astype(int)
+
+        return df
+
+    def _create_bathroom_features_transform(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        if self.median_bath_per_bedroom_ is None:
+            raise ValueError("median_bath_per_bedroom_ was not fitted.")
+
+        if self.median_room_per_bedroom_ is None:
+            raise ValueError("median_room_per_bedroom_ was not fitted.")
+
+        df["TotalBath"] = (
+            df["FullBath"]
+            + 0.5 * df["HalfBath"]
+            + df["BsmtFullBath"]
+            + 0.5 * df["BsmtHalfBath"]
+        )
+
+        df["TotalFullBath"] = df["FullBath"] + df["BsmtFullBath"]
+        df["TotalHalfBath"] = df["HalfBath"] + df["BsmtHalfBath"]
+
+        df["BathPerBedroom"] = np.where(
+            df["BedroomAbvGr"] > 0,
+            df["TotalBath"] / df["BedroomAbvGr"],
+            self.median_bath_per_bedroom_,
+        )
+
+        df["RoomPerBedroom"] = np.where(
+            df["BedroomAbvGr"] > 0,
+            df["TotRmsAbvGrd"] / df["BedroomAbvGr"],
+            self.median_room_per_bedroom_,
+        )
+
+        return df
+
+    def _group_rare_categories_transform(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        for col, mapping in self.rare_mapping_.items():
+            if col in df.columns:
+                df[col] = df[col].replace(mapping)
+
+        return df
+
+    def _one_hot_encode_transform(
+        self,
+        full_data: pd.DataFrame,
+        strict_unknown_categories: bool = True,
+    ) -> pd.DataFrame:
+        df = full_data.copy()
+
+        categorical_cols = [
+            col for col in self.categorical_levels_
+            if col in df.columns
+        ]
+
+        for col in categorical_cols:
+            categories = self.categorical_levels_[col]
+            values = df[col].dropna().astype(str)
+
+            unknown_values = sorted(set(values) - set(categories))
+
+            if unknown_values:
+                if strict_unknown_categories:
+                    raise ValueError(f"Unknown category in {col}: {unknown_values}")
+
+                if "Rare" in categories:
+                    df[col] = df[col].astype(str)
+                    df.loc[df[col].isin(unknown_values), col] = "Rare"
+                else:
+                    df[col] = df[col].astype(str)
+                    df.loc[df[col].isin(unknown_values), col] = categories[0]
+
+            df[col] = pd.Categorical(df[col].astype(str), categories=categories)
+
+        if categorical_cols:
+            df = pd.get_dummies(
+                df,
+                columns=categorical_cols,
+                drop_first=True,
+                dtype=int,
+            )
+
+        return df
+
+    def _apply_skew_transform_to_new_data(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        for col in self.high_skew_columns_:
+            if col in df.columns:
+                df[col] = np.log1p(df[col].clip(lower=0))
+
+        return df
+
+    def _drop_saved_redundant_features(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        cols_to_drop = ["YearBuilt", "YearRemodAdd", "GarageYrBlt"]
+        cols_to_drop.extend(self.constant_columns_)
+        cols_to_drop.extend(self.dead_dummy_columns_)
+
+        existing_cols_to_drop = [
+            col for col in cols_to_drop
+            if col in df.columns
+        ]
+
+        if existing_cols_to_drop:
+            df = df.drop(columns=existing_cols_to_drop)
+
+        return df
+
+    def _align_to_feature_names(self, full_data: pd.DataFrame) -> pd.DataFrame:
+        df = full_data.copy()
+
+        extra_features = [
+            col for col in df.columns
+            if col not in self.feature_names_
+        ]
+
+        if extra_features:
+            logger.warning(
+                f"Extra transformed features dropped during alignment: {extra_features[:20]}"
+            )
+
+        df = df.reindex(columns=self.feature_names_, fill_value=0)
+
+        missing_after_align = int(df.isna().sum().sum())
+
+        if missing_after_align > 0:
+            raise ValueError(
+                f"Missing values found after feature alignment: {missing_after_align}"
+            )
+
+        return df
