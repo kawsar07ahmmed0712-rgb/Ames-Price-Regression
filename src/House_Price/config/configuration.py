@@ -156,6 +156,7 @@ class ConfigurationManager:
     def get_prediction_config(self) -> PredictionConfig:
         try:
             config = self.config["prediction"]
+            data = self.config["data"]
             transformation_config = self.config["data_transformation"]
             trainer_config = self.config["model_trainer"]
 
@@ -165,6 +166,10 @@ class ConfigurationManager:
                 root_dir=config["root_dir"],
                 prediction_output_path=config["prediction_output_path"],
                 batch_prediction_output_path=config["batch_prediction_output_path"],
+                submission_output_path=config["submission_output_path"],
+                raw_test_path=data["raw_test_path"],
+                raw_sample_submission_path=data["raw_sample_submission_path"],
+                transformed_test_path=transformation_config["transformed_test_path"],
                 preprocessor_path=transformation_config["preprocessor_path"],
                 feature_names_path=transformation_config["feature_names_path"],
                 final_model_path=trainer_config["final_model_path"],

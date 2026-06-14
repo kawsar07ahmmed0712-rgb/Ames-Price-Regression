@@ -61,6 +61,10 @@ class PredictionConfig:
     root_dir: str
     prediction_output_path: str
     batch_prediction_output_path: str
+    submission_output_path: str
+    raw_test_path: str
+    raw_sample_submission_path: str
+    transformed_test_path: str
     preprocessor_path: str
     feature_names_path: str
     final_model_path: str

@@ -45,7 +45,8 @@ prediction:
   root_dir: artifacts/prediction
   prediction_output_path: artifacts/prediction/latest_prediction.json
   batch_prediction_output_path: artifacts/prediction/batch_predictions.csv
-
+  submission_output_path: artifacts/prediction/submission/submission.csv
+  
 app:
   host: 0.0.0.0
   port: 8000
