@@ -4,29 +4,27 @@ general:
   inverse_target_transform: expm1
 
 final_model:
-  # IMPORTANT:
-  # This must be confirmed before model_trainer.py coding.
-  # Options may include:
-  # - tail_lift_blend
-  # - conservative_blend
-  # - tuned_catboost_fallback
-  selected_strategy: to_be_confirmed
-
+  selected_strategy: step10_tail_lift_blend
   problem_type: regression
-  target_column: SalePrice
+  target_column: SalePrice_log
+  original_target_column: SalePrice
   id_column: Id
   evaluation_metric: rmse_log1p
 
 blend:
   enabled: true
-  strategy_name: to_be_confirmed
-  weights: {}
+  strategy_name: step10_tail_lift_blend
+  note: >
+    Final ensemble weights are calculated inside ModelTrainer using OOF RMSE
+    and saved in artifacts/model_trainer/blend_manifest.json.
 
 post_processing:
   apply_expm1: true
   apply_clipping: true
-  apply_tail_lift: to_be_confirmed
+  apply_tail_lift: true
+  tail_lift_strength: 0.010
+  tail_lift_start_quantile: 0.90
 
 fallback_model:
-  enabled: true
+  enabled: false
   model_name: tuned_catboost
