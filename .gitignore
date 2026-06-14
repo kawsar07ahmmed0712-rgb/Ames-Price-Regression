@@ -111,3 +111,88 @@ test_ids.csv
 !Data/test.csv
 !Data/sample_submission.csv
 !Data/data_description.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# =========================
+# Python cache files
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Jupyter Notebook cache
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Type checker / lint cache
+# =========================
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# =========================
+# Virtual environments
+# =========================
+venv/
+env/
+.venv/
+ENV/
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+
+# =========================
+# Logs
+# =========================
+logs/*.log
+*.log
+
+# =========================
+# CatBoost generated files
+# =========================
+catboost_info/
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.bak
+
+# =========================
+# Large or generated local files
+# Keep important model artifacts only after final decision
+# =========================
+*.zip
+*.rar
+*.7z
+
+
+
+# Local cleanup backup
+_cleanup_backup/
