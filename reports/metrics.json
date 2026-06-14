@@ -1,0 +1,37 @@
+{
+    "selected_strategy": "step10_tail_lift_blend",
+    "primary_metric": "OOF_RMSE_log1p",
+    "feature_count": 199,
+    "training_rows": 1458,
+    "best_single_score": 0.10832967668319875,
+    "inverse_blend_rmse": 0.10734657464746189,
+    "public_safe_rmse": 0.10755342044330897,
+    "final_conservative_blend_rmse": 0.10737323519899443,
+    "tail_lift_rmse": 0.10732756658545188,
+    "selected_inverse_models": [
+        "KernelRidge",
+        "ElasticNet",
+        "Ridge",
+        "Lasso",
+        "CatBoost",
+        "XGBoost",
+        "LightGBM"
+    ],
+    "all_base_models": [
+        "ElasticNet",
+        "Ridge",
+        "Lasso",
+        "SVR",
+        "KernelRidge",
+        "ExtraTrees",
+        "CatBoost",
+        "XGBoost",
+        "LightGBM"
+    ],
+    "diagnostic_metrics": {
+        "train_fit_rmse_log1p_diagnostic": 0.07392782864468901,
+        "train_fit_rmse_price_diagnostic": 13298.645934764889,
+        "train_fit_mae_price_diagnostic": 9061.181202696016
+    },
+    "note": "Primary score is out-of-fold RMSE from the model trainer. Training-fit metrics are diagnostic only and should not be reported as validation performance."
+}
