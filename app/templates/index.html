@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ames Price Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body>
+    <main class="page-shell">
+
+        <nav class="navbar">
+            <div class="brand">
+                <div class="brand-icon">⌂</div>
+                <span>Ames Price Predictor</span>
+            </div>
+
+            <div class="nav-links">
+                <a href="#home" class="active">Home</a>
+                <a href="#predict">Predict</a>
+                <a href="#insights">Insights</a>
+                <a href="#about">About</a>
+            </div>
+
+            <a class="github-button" href="{{ github_url }}" target="_blank">● GitHub</a>
+        </nav>
+
+        <section id="home" class="hero-section">
+            <div class="hero-copy">
+                <h1>Predict the Value of<br><span>Ames Homes</span></h1>
+                <p>Smart predictions. Real insights. Better decisions.</p>
+
+                <div class="hero-actions">
+                    <a href="#predict" class="primary-button">✦ Predict House Price</a>
+                    <a href="#about" class="text-link">Learn how it works ›</a>
+                </div>
+            </div>
+
+            <div class="hero-image-wrap">
+                <img src="{{ url_for('static', path='images/house_image.png') }}" alt="Modern house" class="hero-house">
+            </div>
+        </section>
+
+        <section id="predict" class="main-grid">
+            <form class="details-card" method="post" action="/predict">
+                <div class="card-heading">
+                    <div class="circle-icon blue">⌂</div>
+                    <div>
+                        <h2>Home Details</h2>
+                        <p>Enter key features of the property</p>
+                    </div>
+                </div>
+
+                {% if error_message %}
+                <div class="error-box">
+                    <strong>Prediction failed.</strong>
+                    <small>{{ error_message }}</small>
+                </div>
+                {% endif %}
+
+                <div class="form-grid">
+                    <label>
+                        <span>Neighborhood</span>
+                        <select name="Neighborhood" required>
+                            {% for item in options.Neighborhood %}
+                            <option value="{{ item }}" {% if form_values.Neighborhood == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Overall Quality</span>
+                        <select name="OverallQual" required>
+                            {% for item in options.OverallQual %}
+                            <option value="{{ item }}" {% if form_values.OverallQual == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Living Area (SF)</span>
+                        <input type="number" name="GrLivArea" value="{{ form_values.GrLivArea }}" min="300" max="6000" step="1" required>
+                    </label>
+
+                    <label>
+                        <span>Garage Cars</span>
+                        <select name="GarageCars" required>
+                            {% for item in options.GarageCars %}
+                            <option value="{{ item }}" {% if form_values.GarageCars == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Year Built</span>
+                        <input type="number" name="YearBuilt" value="{{ form_values.YearBuilt }}" min="1870" max="2026" step="1" required>
+                    </label>
+
+                    <label>
+                        <span>Total Basement SF</span>
+                        <input type="number" name="TotalBsmtSF" value="{{ form_values.TotalBsmtSF }}" min="0" max="7000" step="1" required>
+                    </label>
+
+                    <label>
+                        <span>Full Bath</span>
+                        <select name="FullBath" required>
+                            {% for item in options.FullBath %}
+                            <option value="{{ item }}" {% if form_values.FullBath == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Rooms Above Ground</span>
+                        <select name="TotRmsAbvGrd" required>
+                            {% for item in options.TotRmsAbvGrd %}
+                            <option value="{{ item }}" {% if form_values.TotRmsAbvGrd == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Garage Area</span>
+                        <input type="number" name="GarageArea" value="{{ form_values.GarageArea }}" min="0" max="1500" step="1" required>
+                    </label>
+
+                    <label>
+                        <span>First Floor SF</span>
+                        <input type="number" name="FirstFlrSF" value="{{ form_values.FirstFlrSF }}" min="300" max="5000" step="1" required>
+                    </label>
+
+                    <label>
+                        <span>Year Remodeled</span>
+                        <input type="number" name="YearRemodAdd" value="{{ form_values.YearRemodAdd }}" min="1870" max="2026" step="1" required>
+                    </label>
+
+                    <label>
+                        <span>Exterior Quality</span>
+                        <select name="ExterQual" required>
+                            {% for item in options.quality_values %}
+                            <option value="{{ item }}" {% if form_values.ExterQual == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Kitchen Quality</span>
+                        <select name="KitchenQual" required>
+                            {% for item in options.quality_values %}
+                            <option value="{{ item }}" {% if form_values.KitchenQual == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Basement Quality</span>
+                        <select name="BsmtQual" required>
+                            {% for item in options.bsmt_quality_values %}
+                            <option value="{{ item }}" {% if form_values.BsmtQual == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Garage Finish</span>
+                        <select name="GarageFinish" required>
+                            {% for item in options.garage_finish_values %}
+                            <option value="{{ item }}" {% if form_values.GarageFinish == item %}selected{% endif %}>{{ item }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+
+                <button class="predict-button" type="submit">▥ Predict Price</button>
+            </form>
+
+            <aside class="result-card">
+                <div class="result-top">
+                    <div class="circle-icon gold">◇</div>
+                    <span>Predicted Price</span>
+                </div>
+
+                <div class="price-text">
+                    {{ predicted_price if predicted_price else "$278,450" }}
+                </div>
+
+                <div class="result-pill">
+                    ↗ {{ "Model prediction from your input" if predicted_price else "Example preview for this neighborhood" }}
+                </div>
+
+                <div class="mini-chart">
+                    <svg viewBox="0 0 420 130" preserveAspectRatio="none">
+                        <path d="M0,90 C30,60 55,80 85,70 C120,55 135,85 165,72 C200,55 210,75 240,58 C275,30 295,62 325,42 C360,22 382,30 420,10" class="chart-line"></path>
+                        <path d="M0,130 L0,90 C30,60 55,80 85,70 C120,55 135,85 165,72 C200,55 210,75 240,58 C275,30 295,62 325,42 C360,22 382,30 420,10 L420,130 Z" class="chart-fill"></path>
+                    </svg>
+                </div>
+            </aside>
+        </section>
+
+        <section id="insights" class="performance-card">
+            <div class="perf-title">
+                <div class="circle-icon blue">⌁</div>
+                <div>
+                    <h3>Model Performance</h3>
+                    <p>Model blend performance on validation data</p>
+                </div>
+            </div>
+
+            <div class="metric-box">
+                <span>RMSE</span>
+                <strong>0.1073</strong>
+            </div>
+
+            <div class="metric-box">
+                <span>Features Used</span>
+                <strong>199</strong>
+            </div>
+
+            <div class="metric-box wide">
+                <span>Model Blend</span>
+                <strong>Tail-Lift Ensemble</strong>
+            </div>
+
+            <div class="metric-box small">
+                <span>Reliable</span>
+                <strong>Validated</strong>
+            </div>
+        </section>
+
+        <section id="about" class="bottom-links">
+            <a href="{{ github_url }}" target="_blank" class="bottom-item">
+                <div class="bottom-icon">●</div>
+                <div>
+                    <h4>Open Source</h4>
+                    <p>View code and contribute</p>
+                </div>
+                <span>›</span>
+            </a>
+
+            <a href="#insights" class="bottom-item">
+                <div class="bottom-icon">▣</div>
+                <div>
+                    <h4>About the Project</h4>
+                    <p>Learn more about this project</p>
+                </div>
+                <span>›</span>
+            </a>
+
+            <a href="mailto:khanjhumur6@gmail.com" class="bottom-item">
+                <div class="bottom-icon">✉</div>
+                <div>
+                    <h4>Contact</h4>
+                    <p>Send feedback or suggestions</p>
+                </div>
+                <span>›</span>
+            </a>
+        </section>
+
+    </main>
+</body>
+</html>
