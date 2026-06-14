@@ -8,9 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from House_Price.config.configuration import ConfigurationManager
-from House_Price.pipeline.input_adapter import AmesRawInputAdapter
-from House_Price.pipeline.prediction_pipeline import SinglePredictionPipeline
+from House_Price.pipeline.deployment_predictor import DeploymentPredictionPipeline
 from House_Price.utils.exception import CustomException
 from House_Price.utils.logger import logger
 
@@ -19,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(
     title="Ames Price Predictor",
-    description="Production ML app for Ames house price prediction",
+    description="Render-safe Ames house price prediction app",
     version="0.1.0",
 )
 
@@ -33,51 +31,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @lru_cache(maxsize=1)
-def get_configuration_manager() -> ConfigurationManager:
-    return ConfigurationManager()
-
-
-@lru_cache(maxsize=1)
-def get_input_adapter() -> AmesRawInputAdapter:
-    config_manager = get_configuration_manager()
-    prediction_config = config_manager.get_prediction_config()
-
-    raw_test_path = prediction_config.raw_test_path
-    raw_train_path = str(Path(raw_test_path).with_name("train.csv"))
-
-    return AmesRawInputAdapter(
-        raw_train_path=raw_train_path,
-        raw_test_path=raw_test_path,
-        schema=prediction_config.schema,
-    )
-
-
-@lru_cache(maxsize=1)
-def get_single_prediction_pipeline() -> SinglePredictionPipeline:
-    config_manager = get_configuration_manager()
-    prediction_config = config_manager.get_prediction_config()
-
-    return SinglePredictionPipeline(config=prediction_config)
-
-
-def get_default_form_values() -> Dict[str, Any]:
-    return {
-        "Neighborhood": "NridgHt",
-        "OverallQual": 7,
-        "GrLivArea": 1650,
-        "GarageCars": 2,
-        "GarageArea": 500,
-        "YearBuilt": 2005,
-        "YearRemodAdd": 2005,
-        "TotalBsmtSF": 950,
-        "FirstFlrSF": 950,
-        "FullBath": 2,
-        "TotRmsAbvGrd": 6,
-        "ExterQual": "Gd",
-        "KitchenQual": "Gd",
-        "BsmtQual": "Gd",
-        "GarageFinish": "RFn",
-    }
+def get_deployment_pipeline() -> DeploymentPredictionPipeline:
+    return DeploymentPredictionPipeline(bundle_dir="artifacts/deployment")
 
 
 def render_home(
@@ -87,13 +42,12 @@ def render_home(
     form_values: Optional[Dict[str, Any]] = None,
     error_message: Optional[str] = None,
 ) -> HTMLResponse:
-    adapter = get_input_adapter()
-    options = adapter.get_form_options()
+    pipeline = get_deployment_pipeline()
 
     context = {
         "request": request,
-        "options": options,
-        "form_values": form_values or get_default_form_values(),
+        "options": pipeline.get_form_options(),
+        "form_values": form_values or pipeline.get_default_form_values(),
         "predicted_price": predicted_price,
         "raw_price": raw_price,
         "error_message": error_message,
@@ -117,6 +71,7 @@ async def health():
     return {
         "status": "ok",
         "app": "Ames Price Predictor",
+        "mode": "deployment-artifact",
     }
 
 
@@ -158,21 +113,14 @@ async def predict(
     }
 
     try:
-        adapter = get_input_adapter()
-        raw_df = adapter.build_raw_dataframe(form_values)
+        pipeline = get_deployment_pipeline()
+        output = pipeline.predict(form_values)
 
-        pipeline = get_single_prediction_pipeline()
-        output = pipeline.predict_from_dataframe(
-            raw_df=raw_df,
-            strict_unknown_categories=False,
-            save_latest=True,
-        )
-
-        price = float(output["predictions"][0]["PredictedSalePrice"])
+        price = float(output["PredictedSalePrice"])
 
         return render_home(
             request=request,
-            predicted_price=f"${price:,.0f}",
+            predicted_price=output["PredictedSalePriceFormatted"],
             raw_price=price,
             form_values=form_values,
             error_message=None,
