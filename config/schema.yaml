@@ -1,0 +1,49 @@
+columns:
+  id_column: Id
+  target_column: SalePrice
+
+data_validation:
+  require_train_target: true
+  require_test_target: false
+  allow_extra_columns: false
+  allow_missing_required_columns: false
+
+raw_data:
+  train_path: data/raw/train.csv
+  test_path: data/raw/test.csv
+
+feature_engineering:
+  final_feature_count: 199
+  final_feature_names_path: artifacts/data_transformation/feature_names.json
+  preprocessor_path: artifacts/data_transformation/preprocessor.pkl
+
+frontend_input:
+  strategy: simplified_form_with_schema_defaults
+
+  visible_required_fields:
+    - OverallQual
+    - GrLivArea
+    - GarageCars
+    - GarageArea
+    - TotalBsmtSF
+    - FirstFlrSF
+    - YearBuilt
+    - YearRemodAdd
+    - FullBath
+    - TotRmsAbvGrd
+    - Neighborhood
+    - ExterQual
+    - KitchenQual
+    - BsmtQual
+    - GarageFinish
+
+  default_values_source: training_data_statistics
+  note: >
+    The frontend will ask for important raw house attributes only.
+    The prediction pipeline will create a full raw input row using schema defaults
+    before applying the saved feature engineering pipeline.
+
+runtime_rules:
+  prediction_must_use_saved_preprocessor: true
+  prediction_must_not_fit_new_preprocessor: true
+  prediction_must_align_final_feature_order: true

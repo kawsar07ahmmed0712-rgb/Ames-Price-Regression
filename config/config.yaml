@@ -1,0 +1,53 @@
+project:
+  name: Ames House Price Regression
+  package_name: House_Price
+  version: 0.1.0
+
+data:
+  raw_train_path: data/raw/train.csv
+  raw_test_path: data/raw/test.csv
+  raw_sample_submission_path: data/raw/sample_submission.csv
+  data_description_path: data/raw/data_description.txt
+
+artifacts:
+  root_dir: artifacts
+
+data_ingestion: 
+  root_dir: artifacts/data_ingestion
+  train_file_path: artifacts/data_ingestion/train.csv
+  test_file_path: artifacts/data_ingestion/test.csv
+
+data_validation:
+  root_dir: artifacts/data_validation
+  validation_status_file: artifacts/data_validation/validation_status.json
+  schema_report_file: artifacts/data_validation/schema_report.json
+
+data_transformation:
+  root_dir: artifacts/data_transformation
+  preprocessor_path: artifacts/data_transformation/preprocessor.pkl
+  feature_names_path: artifacts/data_transformation/feature_names.json
+  transformation_metadata_path: artifacts/data_transformation/transformation_metadata.json
+  transformed_train_path: artifacts/data_transformation/train_transformed.csv
+  transformed_test_path: artifacts/data_transformation/test_transformed.csv
+
+model_trainer:
+  root_dir: artifacts/model_trainer
+  final_model_path: artifacts/model_trainer/final_model.pkl
+  blend_manifest_path: artifacts/model_trainer/blend_manifest.json
+  model_metadata_path: artifacts/model_trainer/model_metadata.json
+
+model_evaluation:
+  root_dir: artifacts/model_evaluation
+  metrics_file_path: reports/metrics.json
+  model_report_path: reports/model_report.md
+
+prediction:
+  root_dir: artifacts/prediction
+  prediction_output_path: artifacts/prediction/latest_prediction.json
+  batch_prediction_output_path: artifacts/prediction/batch_predictions.csv
+
+app:
+  host: 0.0.0.0
+  port: 8000
+  template_dir: app/templates
+  static_dir: app/static

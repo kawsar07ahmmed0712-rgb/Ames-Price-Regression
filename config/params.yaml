@@ -1,0 +1,32 @@
+general:
+  random_state: 42
+  target_transform: log1p
+  inverse_target_transform: expm1
+
+final_model:
+  # IMPORTANT:
+  # This must be confirmed before model_trainer.py coding.
+  # Options may include:
+  # - tail_lift_blend
+  # - conservative_blend
+  # - tuned_catboost_fallback
+  selected_strategy: to_be_confirmed
+
+  problem_type: regression
+  target_column: SalePrice
+  id_column: Id
+  evaluation_metric: rmse_log1p
+
+blend:
+  enabled: true
+  strategy_name: to_be_confirmed
+  weights: {}
+
+post_processing:
+  apply_expm1: true
+  apply_clipping: true
+  apply_tail_lift: to_be_confirmed
+
+fallback_model:
+  enabled: true
+  model_name: tuned_catboost
