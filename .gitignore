@@ -213,3 +213,9 @@ artifacts/model_evaluation/
 # =========================
 *.egg-info/
 src/*.egg-info/
+# =========================
+# Generated artifacts - do not push
+# =========================
+artifacts/
+catboost_info/
+*.pkl
