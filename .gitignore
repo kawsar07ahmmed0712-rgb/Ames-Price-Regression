@@ -196,3 +196,20 @@ Thumbs.db
 
 # Local cleanup backup
 _cleanup_backup/
+
+
+
+# =========================
+# Generated ML artifacts
+# =========================
+artifacts/data_ingestion/
+artifacts/data_validation/
+artifacts/data_transformation/
+artifacts/model_trainer/
+artifacts/model_evaluation/
+
+# =========================
+# Python package build metadata
+# =========================
+*.egg-info/
+src/*.egg-info/
