@@ -1,0 +1,13 @@
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.15.3
+scikit-learn==1.7.2
+joblib==1.5.3
+PyYAML==6.0.3
+fastapi==0.139.2
+uvicorn==0.51.0
+jinja2==3.1.6
+python-multipart==0.0.32
+catboost==1.2.10
+xgboost==3.2.0
+lightgbm==4.7.0
